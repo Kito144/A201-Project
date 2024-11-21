@@ -1,31 +1,201 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.8.34511.84
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.vcxproj", "{CF622310-9FAD-4CEC-A921-A11868183998}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Debug|x64.ActiveCfg = Debug|x64
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Debug|x64.Build.0 = Debug|x64
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Debug|x86.ActiveCfg = Debug|Win32
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Debug|x86.Build.0 = Debug|Win32
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Release|x64.ActiveCfg = Release|x64
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Release|x64.Build.0 = Release|x64
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Release|x86.ActiveCfg = Release|Win32
-		{CF622310-9FAD-4CEC-A921-A11868183998}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {938D94B5-2EE4-47E5-A835-296C76412D3D}
-	EndGlobalSection
-EndGlobal
+
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <string>
+using namespace std;
+
+
+
+int PlayerMenu();//Program uses this function to figure out what to do next.
+string WeaponChoice();//User selects their main weapon. Options: Swords, Greatsword, Mace. If starting weapon is a sword or mace, user gets a shield
+string ArmorChoice();//User selects the type of armor they wish to equip. Some armors will give more health but less armor and block chance, or more armor 
+//or more block chance. Rarely, armor will give even amounts of each.
+void RoomGenerator(int);
+void EnemyGenerator(int);
+void Combat();
+void ChancetoHit();
+bool ShopChance();
+bool BlockChance(int);
+
+
+
+
+int main()
+{
+	srand(time(NULL));
+	const int MAX_ITEMS = 5;
+
+	string char_name;
+	int choice,mobs_killed,floor_level,rooms_cleared, player_choice,menu,current_room;
+	int starting_dmg,block_chance=0, starting_health,current_dmg, current_health, current_armor,equipped_armor_bonus_health=0, equipped_armor_bonus_armor=0,
+	equipped_armor_bonus_block=0,main_hand=0, shield=0;//User status variables
+	int low_potion=3, high_potion=0, max_potion=0, gold=10, rations=3; //Number of each consumable
+	string inventory[MAX_ITEMS] = { "Gold","Low Potion","High Potion","Max Potion","Ration"};//User inventory
+	string main_weapon,equipment;
+
+
+	cout << "Opening message:" << endl;//Need to add some sort of introduction to the dungeon and ask the user for their name
+	cout << "Enter your name: " << endl;
+	cin >> char_name;
+	starting_health = 20; //Each character starts with this much health
+	starting_dmg = 0;//Damage is based on currently equipped weapons
+	rooms_cleared = 0;
+	current_health = starting_health;//Players get more health by equiping different armors or shields
+	main_weapon = WeaponChoice();
+	if (main_weapon == "Sword and Shield") {
+		main_hand = 5;//Swords will do less damage than Maces and Greatswords, but will give extra block chance
+		shield = 5;
+	}
+	else if (main_weapon == "Mace and Shield") {
+		main_hand = 7;//Maces will do slightly more damage than swords, but less block chance
+		shield = 3;
+	}
+	else if (main_weapon == "Great Sword") {
+		main_hand = 10; //Greatsowrds will do the most damage in exchange for 0 block chance
+		shield = 0;
+	}
+	current_dmg = starting_dmg + main_hand;
+	equipment = ArmorChoice();
+	if (equipment == "Health Armor") {
+		equipped_armor_bonus_health = 10;
+		equipped_armor_bonus_armor = 5;
+		equipped_armor_bonus_block = 0;
+	}
+	else if (equipment == "Defensive Armor") {
+		equipped_armor_bonus_health = 0;
+		equipped_armor_bonus_armor = 10;
+		equipped_armor_bonus_block = 5;
+	}
+
+	else if (equipment == "Blocking Armor") {
+		equipped_armor_bonus_health = 5;
+		equipped_armor_bonus_armor = 0;
+		equipped_armor_bonus_block = 10;
+	}
+	current_health = starting_health + equipped_armor_bonus_health;
+	current_armor = equipped_armor_bonus_armor;
+	block_chance = shield + equipped_armor_bonus_armor;
+
+	cout << "Introduction" << endl; //Introduces the user to the rules of the dungeon and the types of rewards possible 
+	menu = 0;
+	 
+	while (menu != 4 && current_health != 0) {
+		while (menu != 1 && menu != 4) {
+			menu = PlayerMenu();
+			switch (menu) {
+			case 1:
+				cout << "Good luck " << char_name << endl;
+				break;
+			case 2:
+				cout << "Adventurer Name: " << char_name << endl;
+				cout << "Health: " << current_health << endl;
+				cout << "Block Chance: " << block_chance << endl;
+				cout << "Armor: " << current_armor << endl;
+				cout << "Equipped Armor: " << equipment << endl;
+				cout << "Main Hand: " << main_hand;
+				break;
+			case 3:
+				cout << "Current Equipment: " << endl;
+				cout << "	Armor: " << equipment << endl;
+				cout << "		Health Bonus: " << equipped_armor_bonus_health << endl;
+				cout << "		Armor Bonus: " << equipped_armor_bonus_armor << endl;
+				cout << "		Block Chance Bonus: " << equipped_armor_bonus_block << endl;
+				cout << "	Weapon: " << main_weapon << endl;
+				cout << "		Damage Bonus: " << main_hand << endl;
+				cout << "		Block Chance Bonus: " << shield << endl;
+				break;
+			case 4:
+				cout << "Thanks for playing!" << endl;
+				break;
+			default: 
+				cout << "Please enter a valid option: " << endl;
+				break;
+				}
+
+
+		}
+	}
+
+
+
+
+
+}
+
+string WeaponChoice() {
+	int weapon ;
+		cout << "Enter a number from 1 through to 3 to choose a weapon." << endl;
+		cout << "1. Sword and Shield!" << endl;
+		cout << "2. Mace and Shield!" << endl;
+		cout << "3. Great Sword!" << endl;
+		cin >> weapon;
+		while (weapon < 1 || weapon>3) {
+			if (weapon < 1 || weapon>3) {
+				cout << "Please enter a valid option.";
+				cin >> weapon;
+			}
+		}
+
+		switch (weapon) {
+		case 1:
+			return "Sword and Shield";
+		case 2:
+			return "Mace and Shield";
+		case 3:
+			return "Great Sword";
+		default:
+			cout << "Please enter a valid option.";
+		}
+}
+string ArmorChoice() {
+	int armor;
+		cout << "Enter a number from 1 through to 3 to choose an armor.\n" << endl;
+		cout << "1. Health Armor: \nHealth: 10\nArmor: 5\nBlock Chane: 0\n" << endl;//Gives bonus health, but no block chance
+		cout << "2. Defensive Armor:  \nHealth: \nArmor: 10\nBlock Chane: 5\n" << endl;//Gives Bonus armor, but no health
+		cout << "3. Blocking Armor:  \nHealth: 5\nArmor: 0\nBlock Chane: 10\n" << endl;//Gives bonus block chance, but no armor
+		cin >> armor;
+		while (armor < 1 || armor>3) {
+			if (armor < 1 || armor>3) {
+				cout << "Please enter a valid option:";
+				cin >> armor;
+			}
+		}
+
+		switch (armor) {
+		case 1:
+			return "Health Armor";
+		case 2:
+			return "Defensive Armor";
+		case 3:
+			return "Blocking Armor";
+		default:
+			cout << "Please choose a valid option.";
+		}
+
+	}
+int PlayerMenu() {
+	int choice;
+	bool isValid = 0;
+
+	cout << "1. Go to next room." << endl;//Sends the user to the next room. Calls the RoomGenerator Function
+	cout << "2. View status page." << endl;//Displays the users current stats
+	cout << "3. View Inventory." << endl;//Displays the users current armor and weapon and the bonus to stats that they give
+	cout << "4. Leave dungeon." << endl;//Exits the program
+	cin >> choice;
+	while (isValid != 1) {
+		if (choice < 1 || choice > 4) {
+			cout << "Please choose a valid option: ";
+			cin >> choice;
+		}
+		else {
+			isValid = 1;
+		}
+	}
+	return choice;
+}
+
+void RoomGenerator(int) {
+
+}
+
